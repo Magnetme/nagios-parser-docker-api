@@ -40,8 +40,21 @@ function toBoolean(input) {
 
 const filters = {
 	state : (input, val) => {
-		const desiredState = mapState(val);
-		return input.filter(e => e.current_state === desiredState);
+
+		const shouldNegate = val[0] === '!';
+		const cleanValue = shouldNegate ? val.substring(1) : val;
+		const desiredState = mapState(cleanValue);
+
+		const comparator = e => {
+			const currentState = e.current_state;
+			if(shouldNegate) {
+				return currentState !== desiredState;
+			} else {
+				return currentState === desiredState;
+			}
+		};
+
+		return input.filter(comparator);
 	},
 	flapping : (input, val) => {
 		const desiredState = toBoolean(val);
