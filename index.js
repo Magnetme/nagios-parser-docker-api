@@ -83,11 +83,11 @@ app.get('/', async (req, res) => {
 
 app.get('/info', async (req, res) => {
 	const data = await getNagiosData();
-	res.json(data.info);
+	res.json(data.info[0]);
 });
 app.get('/program', async (req, res) => {
 	const data = await getNagiosData();
-	res.json(data.programstatus);
+	res.json(data.programstatus[0]);
 });
 
 app.get('/hosts/:host/services', async (req, res, next) => {
