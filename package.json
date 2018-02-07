@@ -1,0 +1,23 @@
+{
+  "name": "nagios-parser-docker",
+  "version": "1.0.0",
+  "description": "Nagios parser AI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Magnetme/nagios-parser-docker.git"
+  },
+  "author": "Rogier Slag <rogier.slag@magnet.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Magnetme/nagios-parser-docker/issues"
+  },
+  "homepage": "https://github.com/Magnetme/nagios-parser-docker#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "nagios-status-parser": "^0.0.1"
+  }
+}
