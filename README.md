@@ -1,3 +1,5 @@
+[![Magnet.me](https://cdn.magnet.me/images/logo-2015-full_2x.png)](https://magnet.me)
+
 # nagios-parser-docker-api
 
 In order to read the status of our nagios servers, we use the following service, which runs within docker.
