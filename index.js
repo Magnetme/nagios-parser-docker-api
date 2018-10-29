@@ -31,7 +31,7 @@ function mapState(input) {
 }
 
 function isValidState(input) {
-	const isNegated = val[0] === '!';
+	const isNegated = input[0] === '!';
 	const cleanedValue = isNegated ? input.substring(1) : input;
 	try {
 		mapState(cleanedValue);
