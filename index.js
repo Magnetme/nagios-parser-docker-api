@@ -2,8 +2,13 @@ const express = require('express');
 const util = require('util');
 const readFile = util.promisify(require('fs').readFile);
 const nagiosParser = require('nagios-status-parser');
+const cors = require('cors');
 
 const app = express();
+if (process.argv[2] && process.argv[2] === '--allow-all-cors') {
+	console.log('Allowing CORS from all origins');
+	app.use(cors());
+}
 
 async function getNagiosData() {
 	const nagiosData = await readFile('/opt/nagios/status.dat', 'utf8');
