@@ -25,6 +25,15 @@ function mapState(input) {
 	}
 }
 
+function isValidState(input) {
+	try {
+		mapState(input);
+		return true;
+	} catch (e) {
+		return false;
+	}
+}
+
 function toBoolean(input) {
 	switch (input.toLowerCase()) {
 		case 'true':
@@ -38,6 +47,15 @@ function toBoolean(input) {
 	}
 }
 
+function isValidBoolean(input) {
+	try {
+		toBoolean(input);
+		return true;
+	} catch (e) {
+		return false;
+	}
+}
+
 const filters = {
 	state : (input, val) => {
 
@@ -47,7 +65,7 @@ const filters = {
 
 		const comparator = e => {
 			const currentState = e.current_state;
-			if(shouldNegate) {
+			if (shouldNegate) {
 				return currentState !== desiredState;
 			} else {
 				return currentState === desiredState;
@@ -61,6 +79,17 @@ const filters = {
 		return input.filter(e => e.is_flapping === desiredState);
 	}
 };
+
+function areFiltersValid(query) {
+	if (query.state && !isValidState(query.state)) {
+		return false;
+	}
+	if (query.flapping && !isValidBoolean(query.state)) {
+		return false;
+	}
+
+	return true;
+}
 
 function filterByQuery(input, query) {
 	if (!query) {
@@ -77,47 +106,106 @@ function filterByQuery(input, query) {
 	}, input)
 }
 
+const UNSUPPORTED_FILTER = {error : 'Unsupported filter requested'};
+const NAGIOS_UNAVAILABLE = {error : 'Nagios unavailable'};
+
 app.get('/', async (req, res) => {
-	res.json(await getNagiosData());
+	try {
+		res.json(await getNagiosData());
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 
 app.get('/info', async (req, res) => {
-	const data = await getNagiosData();
-	res.json(data.info[0]);
+	try {
+		const data = await getNagiosData();
+		res.json(data.info[0]);
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 app.get('/program', async (req, res) => {
-	const data = await getNagiosData();
-	res.json(data.programstatus[0]);
+	try {
+		const data = await getNagiosData();
+		res.json(data.programstatus[0]);
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 
-app.get('/hosts/:host/services', async (req, res, next) => {
-	const host = req.params.host;
-	const data = await getNagiosData();
-	res.json(filterByQuery(data.servicestatus.filter(e => e.host_name === host), req.query));
+app.get('/hosts/:host/services', async (req, res) => {
+	if (!areFiltersValid(req.query)) {
+		res.status(400).json(UNSUPPORTED_FILTER);
+		return;
+	}
+
+	try {
+		const host = req.params.host;
+		const data = await getNagiosData();
+		res.json(filterByQuery(data.servicestatus.filter(e => e.host_name === host), req.query));
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
-app.get('/hosts/:host', async (req, res, next) => {
-	const host = req.params.host;
-	const data = await getNagiosData();
-	res.json(data.hoststatus.filter(e => e.host_name === host));
+app.get('/hosts/:host', async (req, res) => {
+	try {
+		const host = req.params.host;
+		const data = await getNagiosData();
+		res.json(data.hoststatus.filter(e => e.host_name === host));
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 app.get('/hosts', async (req, res) => {
-	const data = await getNagiosData();
-	res.json(filterByQuery(filterByQuery(data.hoststatus), req.query));
+	if (!areFiltersValid(req.query)) {
+		res.status(400).json(UNSUPPORTED_FILTER);
+		return;
+	}
+
+	try {
+		const data = await getNagiosData();
+		res.json(filterByQuery(filterByQuery(data.hoststatus), req.query));
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 
-app.get('/services/:service', async (req, res, next) => {
-	const service = req.params.service;
-	const data = await getNagiosData();
-	res.json(filterByQuery(data.servicestatus.filter(e => e.service_description === service), req.query));
+app.get('/services/:service', async (req, res) => {
+	if (!areFiltersValid(req.query)) {
+		res.status(400).json(UNSUPPORTED_FILTER);
+		return;
+	}
+
+	try {
+		const service = req.params.service;
+		const data = await getNagiosData();
+		res.json(filterByQuery(data.servicestatus.filter(e => e.service_description === service), req.query));
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 app.get('/services', async (req, res) => {
-	const data = await getNagiosData();
-	res.json(filterByQuery(data.servicestatus, req.query));
+	try {
+		if (!areFiltersValid(req.query)) {
+			res.status(400).json(UNSUPPORTED_FILTER);
+			return;
+		}
+
+		const data = await getNagiosData();
+		res.json(filterByQuery(data.servicestatus, req.query));
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 
 app.get('/contacts', async (req, res) => {
-	const data = await getNagiosData();
-	res.json(data.contactstatus);
+	try {
+		const data = await getNagiosData();
+		res.json(data.contactstatus);
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+	}
 });
 
 app.listen(8080, () => {
