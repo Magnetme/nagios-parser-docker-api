@@ -34,6 +34,11 @@ Notifications will be sent for the following changes:
 - A host or service state changed (_HARD/SOFT_),
 - Notifications will be surpressed for flapping hosts and services.
 
+## CORS
+
+For easier integration (as you should only expose this data on your internal network), you can accept all Origins for CORS.
+Pass the flag `--allow-all-cors` for this to the script.
+
 ## Filters
 
 | Filter | Values | Description |
