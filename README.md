@@ -26,6 +26,14 @@ You can also enable `--with-ws` as a command line flag.
 The service will start with a websockets endpoint at `/`.
 This will send you either `update-hosts` or `update-services` if their state changed significantly.
 
+Notifications will be sent for the following changes:
+
+- New services or hosts added,
+- Services or hosts were removed,
+- A host or services state changed,
+- A host or service state changed (_HARD/SOFT_),
+- Notifications will be surpressed for flapping hosts and services.
+
 ## Filters
 
 | Filter | Values | Description |

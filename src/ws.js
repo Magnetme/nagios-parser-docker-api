@@ -6,8 +6,12 @@ let mostRecentClientId = 0;
 
 let clients = [];
 
-const hostStatusMap = [];
-const serviceStatusMap = [];
+const hostStatusMap = {};
+const serviceStatusMap = {};
+
+function serviceName(service) {
+	return `${service.host_name}----${service.service_description}`;
+}
 
 async function poll() {
 	const data = await getNagiosData();
@@ -24,24 +28,42 @@ async function poll() {
 		if (hostStatusMap[name] && hostStatusMap[name].status === status && hostStatusMap[name].type === type) {
 			// all OK here, no changes
 		}
-		else {
+		else if (!host.is_flapping) {
 			requireHostPush = true;
 		}
 		hostStatusMap[name] = {name, status, type};
 	});
+	const currentHosts = hosts.map(host => host.host_name);
+	const hostsRemoved = Object.keys(hostStatusMap)
+		.filter(host => hostStatusMap[host] !== undefined && hostStatusMap[host] !== null)
+		.filter(hostName => !currentHosts.includes(hostName));
+	if (hostsRemoved.length > 0) {
+		console.log('A host was removed');
+		requireHostPush = true;
+	}
+	hostsRemoved.forEach(host => hostStatusMap[host] = undefined);
 
 	services.forEach(service => {
-		const name = `${service.host_name}----${service.service_description}`;
+		const name = serviceName(service);
 		const status = service.current_state;
 		const type = service.state_type;
 		if (serviceStatusMap[name] && serviceStatusMap[name].status === status && serviceStatusMap[name].type === type) {
 			// all OK here, no changes
 		}
-		else {
+		else if (!service.is_flapping) {
 			requireServicePush = true;
 		}
 		serviceStatusMap[name] = {name, status, type};
 	});
+	const currentServices = services.map(service => serviceName(service));
+	const servicesRemoved = Object.keys(serviceStatusMap)
+		.filter(service => serviceStatusMap[service] !== undefined && serviceStatusMap[service] !== null)
+		.filter(service => !currentServices.includes(service));
+	if (servicesRemoved.length > 0) {
+		console.log('A service was removed');
+		requireServicePush = true;
+	}
+	servicesRemoved.forEach(service => serviceStatusMap[service] = undefined);
 
 	if (requireHostPush) {
 		console.log('State change found for hosts');
@@ -54,7 +76,7 @@ async function poll() {
 }
 
 function startPolling() {
-	interval = setInterval(poll, 5000);
+	interval = setInterval(poll, 2500);
 	console.log('First websocket client connected, starting polling');
 	poll();
 }
