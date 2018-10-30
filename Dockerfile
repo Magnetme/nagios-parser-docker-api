@@ -9,7 +9,7 @@ WORKDIR /opt/src
 ADD package.json /opt/src
 ADD yarn.lock /opt/src
 RUN yarn install
-ADD index.js /opt/src
+ADD src/ /opt/src
 
-CMD ["node", "/opt/src/index.js"]
+CMD ["node", "/opt/src/index.js", "--allow-all-cors", "--with-ws"]
 

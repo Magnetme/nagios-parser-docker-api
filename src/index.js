@@ -1,74 +1,25 @@
 const express = require('express');
-const util = require('util');
-const readFile = util.promisify(require('fs').readFile);
-const nagiosParser = require('nagios-status-parser');
 const cors = require('cors');
 
+const getNagiosData = require('./nagios');
+const {mapState, toBoolean, areFiltersValid, cleanNegation, isNegated} = require('./transformers');
+const config = require('./config');
+
 const app = express();
-if (process.argv[2] && process.argv[2] === '--allow-all-cors') {
-	console.log('Allowing CORS from all origins');
+
+console.log('Starting with options', config);
+
+if (config.allowAllCors) {
 	app.use(cors());
 }
-
-async function getNagiosData() {
-	const nagiosData = await readFile('/opt/nagios/status.dat', 'utf8');
-	return nagiosParser(nagiosData);
-}
-
-function mapState(input) {
-	switch (input.toUpperCase()) {
-		case 'CRITICAL':
-			return 2;
-		case 'WARNING':
-			return 1;
-		case 'OK':
-			return 0;
-		case 'UNKNOWN':
-			return 3;
-		default:
-			throw new Error('Requested state not supported');
-	}
-}
-
-function isValidState(input) {
-	const isNegated = input[0] === '!';
-	const cleanedValue = isNegated ? input.substring(1) : input;
-	try {
-		mapState(cleanedValue);
-		return true;
-	} catch (e) {
-		return false;
-	}
-}
-
-function toBoolean(input) {
-	switch (input.toLowerCase()) {
-		case 'true':
-		case '1':
-			return 1;
-		case 'false':
-		case '0':
-			return 0;
-		default:
-			throw new Error('Requested state not supported');
-	}
-}
-
-function isValidBoolean(input) {
-	try {
-		toBoolean(input);
-		return true;
-	} catch (e) {
-		return false;
-	}
+if (config.withWebsockets) {
+	require('./ws.js')(app);
 }
 
 const filters = {
 	state : (input, val) => {
-
-		const shouldNegate = val[0] === '!';
-		const cleanValue = shouldNegate ? val.substring(1) : val;
-		const desiredState = mapState(cleanValue);
+		const shouldNegate = isNegated(val);
+		const desiredState = mapState(cleanNegation(val));
 
 		const comparator = e => {
 			const currentState = e.current_state;
@@ -87,17 +38,6 @@ const filters = {
 	}
 };
 
-function areFiltersValid(query) {
-	if (query.state && !isValidState(query.state)) {
-		return false;
-	}
-	if (query.flapping && !isValidBoolean(query.state)) {
-		return false;
-	}
-
-	return true;
-}
-
 function filterByQuery(input, query) {
 	if (!query) {
 		return input;
@@ -115,6 +55,9 @@ function filterByQuery(input, query) {
 
 const UNSUPPORTED_FILTER = {error : 'Unsupported filter requested'};
 const NAGIOS_UNAVAILABLE = {error : 'Nagios unavailable'};
+const HOST_NOT_FOUND = {error : 'Requested host was not found'};
+const SERVICE_NOT_FOUND = {error : 'Requested service was not found'};
+const NON_UNIQUE_MATCH = {error : 'Requested service appeared on multiple hosts'};
 
 app.get('/', async (req, res) => {
 	try {
@@ -141,28 +84,75 @@ app.get('/program', async (req, res) => {
 	}
 });
 
+app.get('/hosts/:host/services/:service', async (req, res) => {
+	if (!areFiltersValid(req.query)) {
+		res.status(400).json(UNSUPPORTED_FILTER);
+		return;
+	}
+
+	const host = req.params.host;
+	const service = req.params.service;
+	let data;
+	try {
+		data = await getNagiosData();
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+		return;
+	}
+
+	const filteredForHost = data.servicestatus.filter(e => e.host_name === host);
+	if (filteredForHost.length === 0) {
+		res.status(404).json(HOST_NOT_FOUND);
+		return;
+	}
+	const result = filterByQuery(filteredForHost.filter(e => e.service_description === service), req.query);
+	if (result.length === 0) {
+		res.status(404).json(SERVICE_NOT_FOUND);
+		return;
+	}
+	res.json(result);
+});
+
 app.get('/hosts/:host/services', async (req, res) => {
 	if (!areFiltersValid(req.query)) {
 		res.status(400).json(UNSUPPORTED_FILTER);
 		return;
 	}
 
+	let data;
 	try {
 		const host = req.params.host;
-		const data = await getNagiosData();
-		res.json(filterByQuery(data.servicestatus.filter(e => e.host_name === host), req.query));
+		data = await getNagiosData();
 	} catch (e) {
 		res.status(500).json(NAGIOS_UNAVAILABLE);
+		return;
 	}
+
+	const result = filterByQuery(data.servicestatus.filter(e => e.host_name === host), req.query);
+	if (result.length === 0) {
+		res.status(404).end(HOST_NOT_FOUND);
+		return;
+	}
+	res.json(result);
 });
+
 app.get('/hosts/:host', async (req, res) => {
+	const host = req.params.host;
+	let data;
 	try {
-		const host = req.params.host;
-		const data = await getNagiosData();
-		res.json(data.hoststatus.filter(e => e.host_name === host));
+		data = await getNagiosData();
 	} catch (e) {
-		res.status(500).json(NAGIOS_UNAVAILABLE);
+		result.status(500).json(NAGIOS_UNAVAILABLE);
 	}
+
+	const result = data.hoststatus.filter(e => e.host_name === host);
+
+	if (result.length === 0) {
+		res.status(404).json(HOST_NOT_FOUND);
+		return;
+	}
+
+	res.json(result[0]);
 });
 app.get('/hosts', async (req, res) => {
 	if (!areFiltersValid(req.query)) {
@@ -184,13 +174,31 @@ app.get('/services/:service', async (req, res) => {
 		return;
 	}
 
+	const service = req.params.service;
+	let data;
 	try {
-		const service = req.params.service;
-		const data = await getNagiosData();
-		res.json(filterByQuery(data.servicestatus.filter(e => e.service_description === service), req.query));
+		data = await getNagiosData();
 	} catch (e) {
 		res.status(500).json(NAGIOS_UNAVAILABLE);
+		return;
 	}
+
+	const result = filterByQuery(data.servicestatus.filter(e => e.service_description === service), req.query);
+	if (result.length === 0) {
+		res.status(404).json(SERVICE_NOT_FOUND);
+		return;
+	}
+	else if (result.length > 1) {
+		const matches = result.map(({host_name, service_description}) => ({
+			host : host_name,
+			service : service_description
+		}));
+		res.status(412).json({...NON_UNIQUE_MATCH, matches});
+		return;
+	}
+
+	res.json(result[0]);
+
 });
 app.get('/services', async (req, res) => {
 	try {
