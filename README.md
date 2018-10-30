@@ -12,12 +12,19 @@ It exposes the status of nagios through HTTP in a sensible way
 | `/` | No | Returns the entire overview of Nagios |
 | `/info` | No | Returns the information about Nagios |
 | `/program` | No | Returns the informatino about running Nagios program and settings |
+| `/hosts/:host/services/:service` | Yes | Returns service information about the specified service on the specified host |
 | `/hosts/:host/services` | Yes | Returns service information about services on the specified host |
 | `/hosts/:host` | No | Returns host information on the specified host |
 | `/hosts` | Yes | Returns host information on all hosts |
 | `/services/:service` | Yes | Returns service information about services with the specified service name |
 | `/services` | Yes | Returns service information on all services |
 | `/contacts` | No | Returns all contact information |
+
+## Websockets
+
+You can also enable `--with-ws` as a command line flag.
+The service will start with a websockets endpoint at `/`.
+This will send you either `update-hosts` or `update-services` if their state changed significantly.
 
 ## Filters
 
