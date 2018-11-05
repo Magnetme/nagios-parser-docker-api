@@ -3,7 +3,7 @@
 # nagios-parser-docker-api
 
 In order to read the status of our nagios servers, we use the following service, which runs within docker.
-It exposes the status of nagios through HTTP in a sensible way
+It exposes the status of nagios through HTTP in a sensible way.
 
 ## Endpoints
 
@@ -19,6 +19,12 @@ It exposes the status of nagios through HTTP in a sensible way
 | `/services/:service` | Yes | Returns service information about services with the specified service name |
 | `/services` | Yes | Returns service information on all services |
 | `/contacts` | No | Returns all contact information |
+
+### Encoding
+
+Note that host and service names are __case-sensitive__.
+In case host or service names contain special characters, these need to be encoded (use the Javascript implementation of `encodeURIComponent` for this).
+
 
 ## Websockets
 
