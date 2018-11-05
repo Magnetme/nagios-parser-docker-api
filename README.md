@@ -44,7 +44,7 @@ Pass the flag `--allow-all-cors` for this to the script.
 | Filter | Values | Description |
 |---|---|---|
 | `state` | `OK`, `WARNING`, `CRITICAL`, `UNKNOWN` | Only show services or hosts which match the speficied state. Prepend with `!` for a negation. So `!OK` will return all non-OK services or hosts |
-| `flaping` | `true`, `false`, `1`, `0` | Only show services or hosts which are currently flapping (or not) |
+| `flapping` | `true`, `false`, `1`, `0` | Only show services or hosts which are currently flapping (or not) |
 
 ## Running it
 
