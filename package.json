@@ -1,6 +1,6 @@
 {
   "name": "nagios-parser-docker",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Nagios parser AI",
   "main": "src/index.js",
   "scripts": {
