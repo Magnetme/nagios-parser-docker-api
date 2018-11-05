@@ -90,8 +90,7 @@ app.get('/hosts/:host/services/:service', async (req, res) => {
 		return;
 	}
 
-	const host = req.params.host;
-	const service = req.params.service;
+	const {host, service} = req.params;
 	let data;
 	try {
 		data = await getNagiosData();
@@ -119,9 +118,9 @@ app.get('/hosts/:host/services', async (req, res) => {
 		return;
 	}
 
+	const {host} = req.params;
 	let data;
 	try {
-		const host = req.params.host;
 		data = await getNagiosData();
 	} catch (e) {
 		res.status(500).json(NAGIOS_UNAVAILABLE);
@@ -130,19 +129,20 @@ app.get('/hosts/:host/services', async (req, res) => {
 
 	const result = filterByQuery(data.servicestatus.filter(e => e.host_name === host), req.query);
 	if (result.length === 0) {
-		res.status(404).end(HOST_NOT_FOUND);
+		res.status(404).json(HOST_NOT_FOUND);
 		return;
 	}
 	res.json(result);
 });
 
 app.get('/hosts/:host', async (req, res) => {
-	const host = req.params.host;
+	const {host} = req.params;
 	let data;
 	try {
 		data = await getNagiosData();
 	} catch (e) {
-		result.status(500).json(NAGIOS_UNAVAILABLE);
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+		return;
 	}
 
 	const result = data.hoststatus.filter(e => e.host_name === host);
@@ -174,7 +174,7 @@ app.get('/services/:service', async (req, res) => {
 		return;
 	}
 
-	const service = req.params.service;
+	const {service} = req.params;
 	let data;
 	try {
 		data = await getNagiosData();
