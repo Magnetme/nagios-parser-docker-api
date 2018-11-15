@@ -12,7 +12,7 @@ It exposes the status of nagios through HTTP in a sensible way.
 | `/` | No | Returns the entire overview of Nagios |
 | `/info` | No | Returns the information about Nagios |
 | `/program` | No | Returns the informatino about running Nagios program and settings |
-| `/hosts/:host/services/:service` | Yes | Returns service information about the specified service on the specified host |
+| `/hosts/:host/services/:service` | No | Returns service information about the specified service on the specified host |
 | `/hosts/:host/services` | Yes | Returns service information about services on the specified host |
 | `/hosts/:host` | No | Returns host information on the specified host |
 | `/hosts` | Yes | Returns host information on all hosts |
