@@ -57,7 +57,7 @@ function areFiltersValid(query) {
 	if (query.state && !isValidState(query.state)) {
 		return false;
 	}
-	if (query.flapping && !isValidBoolean(query.state)) {
+	if (query.flapping && !isValidBoolean(query.flapping)) {
 		return false;
 	}
 
