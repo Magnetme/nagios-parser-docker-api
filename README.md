@@ -7,18 +7,19 @@ It exposes the status of nagios through HTTP in a sensible way.
 
 ## Endpoints
 
-| Endpoint | Filters | Description |
-|---|---|---|
-| `/` | No | Returns the entire overview of Nagios |
-| `/info` | No | Returns the information about Nagios |
-| `/program` | No | Returns the informatino about running Nagios program and settings |
-| `/hosts/:host/services/:service` | No | Returns service information about the specified service on the specified host |
-| `/hosts/:host/services` | Yes | Returns service information about services on the specified host |
-| `/hosts/:host` | No | Returns host information on the specified host |
-| `/hosts` | Yes | Returns host information on all hosts |
-| `/services/:service` | Yes | Returns service information about services with the specified service name |
-| `/services` | Yes | Returns service information on all services |
-| `/contacts` | No | Returns all contact information |
+| Method | Endpoint | Filters | Description |
+|---|---|---|---|
+| GET | `/` | No | Returns the entire overview of Nagios |
+| GET | `/info` | No | Returns the information about Nagios |
+| GET | `/program` | No | Returns the informatino about running Nagios program and settings |
+| GET | `/hosts/:host/services/:service` | No | Returns service information about the specified service on the specified host |
+| POST | `/hosts/:host/services/:service` | - | Submit a service check for the specified host and service |
+| GET | `/hosts/:host/services` | Yes | Returns service information about services on the specified host |
+| GET | `/hosts/:host` | No | Returns host information on the specified host |
+| GET | `/hosts` | Yes | Returns host information on all hosts |
+| GET | `/services/:service` | Yes | Returns service information about services with the specified service name |
+| GET | `/services` | Yes | Returns service information on all services |
+| GET | `/contacts` | No | Returns all contact information |
 
 ### Encoding
 
@@ -57,5 +58,5 @@ Pass the flag `--allow-all-cors` for this to the script.
 [![Docker Automated build](https://img.shields.io/docker/automated/magnetme/nagios-parser-docker-api.svg)]()
 [![npm](https://img.shields.io/npm/v/nagios-parser-docker.svg)]()
 
-You can start it as follows `docker run -v /var/cache/nagios3/:/opt/nagios -p 8080:8080 magnetme/nagios-parser-docker-api:latest`.
+You can start it as follows `docker run -v /var/cache/nagios3/:/opt/nagios -v /var/lib/nagios3/rw/:/opt/commands -p 8080:8080 magnetme/nagios-parser-docker-api:latest`.
 In this case you can just execute `http://localhost:8080` to see all of nagios' data in JSON format.

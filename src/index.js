@@ -2,10 +2,12 @@ const express = require('express');
 const cors = require('cors');
 
 const getNagiosData = require('./nagios');
-const {mapState, toBoolean, areFiltersValid, cleanNegation, isNegated} = require('./transformers');
+const writeToNagiosCommands = require('./commands');
+const {mapState, isValidState, toBoolean, areFiltersValid, cleanNegation, isNegated} = require('./transformers');
 const config = require('./config');
 
 const app = express();
+app.use(express.json());
 
 console.log('Starting with options', config);
 
@@ -58,6 +60,8 @@ const NAGIOS_UNAVAILABLE = {error : 'Nagios unavailable'};
 const HOST_NOT_FOUND = {error : 'Requested host was not found'};
 const SERVICE_NOT_FOUND = {error : 'Requested service was not found'};
 const NON_UNIQUE_MATCH = {error : 'Requested service appeared on multiple hosts'};
+const MISSING = {error : 'Not all required fields where entered'};
+const INVALID = {error : 'Some submitted data is invalid'};
 
 app.get('/', async (req, res) => {
 	try {
@@ -82,6 +86,41 @@ app.get('/program', async (req, res) => {
 	} catch (e) {
 		res.status(500).json(NAGIOS_UNAVAILABLE);
 	}
+});
+
+app.post('/hosts/:host/services/:service', async (req, res) => {
+	const {host, service} = req.params || {};
+
+	let data;
+	try {
+		data = await getNagiosData();
+	} catch (e) {
+		res.status(500).json(NAGIOS_UNAVAILABLE);
+		return;
+	}
+
+	const filteredForHost = data.servicestatus.filter(e => e.host_name === host);
+	if (filteredForHost.length === 0) {
+		res.status(404).json(HOST_NOT_FOUND);
+		return;
+	}
+	const result = filterByQuery(filteredForHost.filter(e => e.service_description === service), req.query);
+	if (result.length === 0) {
+		res.status(404).json(SERVICE_NOT_FOUND);
+		return;
+	}
+
+	const {state, output = ''} = req.body || {};
+	if (!state) {
+		res.status(400).json(MISSING);
+		return;
+	}
+	if (!isValidState(state)) {
+		res.status(400).json(INVALID);
+		return;
+	}
+	await writeToNagiosCommands(host, service, state, output);
+	res.status(204).end();
 });
 
 app.get('/hosts/:host/services/:service', async (req, res) => {
@@ -187,8 +226,7 @@ app.get('/services/:service', async (req, res) => {
 	if (result.length === 0) {
 		res.status(404).json(SERVICE_NOT_FOUND);
 		return;
-	}
-	else if (result.length > 1) {
+	} else if (result.length > 1) {
 		const matches = result.map(({host_name, service_description}) => ({
 			host : host_name,
 			service : service_description

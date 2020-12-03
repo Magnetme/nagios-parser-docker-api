@@ -66,6 +66,7 @@ function areFiltersValid(query) {
 
 module.exports = {
 	mapState,
+	isValidState,
 	toBoolean,
 	areFiltersValid,
 	cleanNegation,

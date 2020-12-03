@@ -27,8 +27,7 @@ async function poll() {
 		const type = host.state_type;
 		if (hostStatusMap[name] && hostStatusMap[name].status === status && hostStatusMap[name].type === type) {
 			// all OK here, no changes
-		}
-		else if (!host.is_flapping) {
+		} else if (!host.is_flapping) {
 			requireHostPush = true;
 		}
 		hostStatusMap[name] = {name, status, type};
@@ -49,8 +48,7 @@ async function poll() {
 		const type = service.state_type;
 		if (serviceStatusMap[name] && serviceStatusMap[name].status === status && serviceStatusMap[name].type === type) {
 			// all OK here, no changes
-		}
-		else if (!service.is_flapping) {
+		} else if (!service.is_flapping) {
 			requireServicePush = true;
 		}
 		serviceStatusMap[name] = {name, status, type};
