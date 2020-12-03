@@ -3,7 +3,7 @@ function isNegated(input) {
 }
 
 function cleanNegation(input) {
-	return isNegated ? input.substring(1) : input;
+	return isNegated(input) ? input.substring(1) : input;
 }
 
 function mapState(input) {
