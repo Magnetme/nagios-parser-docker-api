@@ -1,4 +1,4 @@
-[![Magnet.me](https://cdn.magnet.me/images/logo-2015-full_2x.png)](https://magnet.me)
+[![Magnet.me Logo](https://cdn.magnet.me/images/logo-2015-full.svg)](https://magnet.me "Discover the best companies, jobs and internships at Magnet.me")
 
 # nagios-parser-docker-api
 
